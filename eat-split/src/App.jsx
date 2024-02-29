@@ -26,6 +26,10 @@ function App() {
   const [isFriendSelected, setIsFriendSelected] = useState(false);
   const [friendsArr, setFriendsArr] = useState(initialFriends);
 
+  function handleNewFriend(newFriend) {
+    setFriendsArr([...friendsArr, newFriend]);
+  }
+
   return (
     <div className="app">
       <div className="sidebar">
@@ -36,8 +40,7 @@ function App() {
         />
         <FormAddFriend
           isOpen={isAddFriendOpen}
-          friendsArr={friendsArr}
-          onSetFriendsArr={setFriendsArr}
+          onHandleNewFriend={handleNewFriend}
         />
         <Button isOpen={isAddFriendOpen} onIsOpen={setIsAddFriendOpen}>
           {!isAddFriendOpen ? "Add friend" : "Close"}
@@ -82,14 +85,41 @@ function Friend({ friend, isOpen, onIsOpen }) {
   );
 }
 
-function FormAddFriend({ isOpen, friendsArr, onSetFriendsArr }) {
+function FormAddFriend({ isOpen, onHandleNewFriend }) {
+  const [name, setName] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  function handleOnSubmit(e) {
+    e.preventDefault();
+
+    const newFriend = {
+      id: Date.now(),
+      name: name,
+      image: imageUrl,
+      balance: 0,
+    };
+
+    onHandleNewFriend(newFriend);
+  }
+
   return (
     isOpen && (
-      <form className="form-add-friend">
+      <form onSubmit={(e) => handleOnSubmit(e)} className="form-add-friend">
         <label htmlFor="fname">👫 Friend name</label>
-        <input type="text" id="fname" name="fname" />
+        <input
+          type="text"
+          id="fname"
+          name="fname"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
         <label htmlFor="img-url">🌄 Image URL</label>
-        <input type="url" name="img-url" id="img-url" />
+        <input
+          type="url"
+          name="img-url"
+          id="img-url"
+          value={imageUrl}
+          onChange={(e) => setImageUrl(e.target.value)}
+        />
         <Button>Add</Button>
       </form>
     )
