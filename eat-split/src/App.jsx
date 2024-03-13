@@ -118,6 +118,8 @@ function FormAddFriend({ isOpen, onHandleNewFriend }) {
     };
 
     onHandleNewFriend(newFriend);
+    setName("");
+    setImageUrl("");
   }
 
   return (
@@ -183,13 +185,15 @@ function FormSplitBill({ friendsArr, curFriend, onFriendsBalance }) {
   function handleSplitBill(e) {
     e.preventDefault();
     const friendExpenses = billValue - yourExpenses;
-    console.log(yourExpenses);
-    console.log(friendExpenses);
+
     if (whoPay === "You") {
       onFriendsBalance(curFriend, friendExpenses);
     } else {
       onFriendsBalance(curFriend, -yourExpenses);
     }
+
+    setBillValue("");
+    setYourExpenses("");
   }
 
   return (
