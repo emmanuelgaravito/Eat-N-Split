@@ -23,7 +23,9 @@ const initialFriends = [
 
 function App() {
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
-  const [isFriendSelected, setIsFriendSelected] = useState([]);
+
+  const [curFriend, setCurFriend] = useState(null);
+
   const [friendsArr, setFriendsArr] = useState(initialFriends);
 
   function handleNewFriend(newFriend) {
@@ -34,8 +36,8 @@ function App() {
     <div className="app">
       <div className="sidebar">
         <FriendsList
-          isFriendSelected={isFriendSelected}
-          onSetIsFriendSelected={setIsFriendSelected}
+          curFriend={curFriend}
+          onCurFriend={setCurFriend}
           friendsArr={friendsArr}
         />
         <FormAddFriend
@@ -46,12 +48,16 @@ function App() {
           {!isAddFriendOpen ? "Add friend" : "Close"}
         </Button>
       </div>
-      <FormSplitBill isFriendSelected={isFriendSelected} />
+      <FormSplitBill
+        friendsArr={friendsArr}
+        curFriend={curFriend}
+        onCurFriend={setCurFriend}
+      />
     </div>
   );
 }
 
-function FriendsList({ isFriendSelected, onSetIsFriendSelected, friendsArr }) {
+function FriendsList({ curFriend, onCurFriend, friendsArr }) {
   const friends = friendsArr;
   return (
     <ul>
@@ -59,15 +65,15 @@ function FriendsList({ isFriendSelected, onSetIsFriendSelected, friendsArr }) {
         <Friend
           friend={el}
           key={el.id}
-          isFriendSelected={isFriendSelected}
-          onSetIsFriendSelected={onSetIsFriendSelected}
+          curFriend={curFriend}
+          onCurFriend={onCurFriend}
         />
       ))}
     </ul>
   );
 }
 
-function Friend({ friend, isFriendSelected, onSetIsFriendSelected }) {
+function Friend({ friend, curFriend, onCurFriend }) {
   return (
     <li>
       <img src={friend.image} alt={friend.name} />
@@ -83,11 +89,7 @@ function Friend({ friend, isFriendSelected, onSetIsFriendSelected }) {
           {friend.name} owes you {friend.balance}€
         </p>
       )}
-      <Button
-        isFriendSelected={isFriendSelected}
-        onSetIsFriendSelected={onSetIsFriendSelected}
-        friend={friend}
-      >
+      <Button curFriend={curFriend} onCurFriend={onCurFriend} friend={friend}>
         Select
       </Button>
     </li>
@@ -139,14 +141,12 @@ function Button({
   children,
   isOpen,
   onIsOpen,
-  isFriendSelected,
-  onSetIsFriendSelected,
+  curFriend,
+  onCurFriend,
   friend,
 }) {
   function handleIsFriendSelected() {
-    if (isFriendSelected.length === 0)
-      onSetIsFriendSelected([...isFriendSelected, friend]);
-    else onSetIsFriendSelected([]);
+    onCurFriend(friend.id === curFriend ? null : friend.id);
   }
 
   return (
@@ -164,23 +164,25 @@ function Button({
   );
 }
 
-function FormSplitBill({ isFriendSelected }) {
+function FormSplitBill({ friendsArr, curFriend }) {
+  const selectedFriend = friendsArr.filter((el) => el.id === curFriend);
+
   return (
-    isFriendSelected.length > 0 && (
+    curFriend && (
       <form className="form-split-bill">
-        <h2>Split a bill with {isFriendSelected[0].name}</h2>
+        <h2>Split a bill with {selectedFriend[0].name}</h2>
         <label htmlFor="bvalue">💰 Bill value</label>
         <input id="bvalue" name="bvalue" type="number" />
         <label htmlFor="yexpenses">🤕 Your expenses</label>
         <input id="yexpenses" name="yexpenses" type="number" />
         <label htmlFor="hexpense">
-          👫 {isFriendSelected[0].name}&#39;s expense
+          👫 {selectedFriend[0].name}&#39;s expense
         </label>
         <input id="hexpense" name="hexpense" type="number" disabled />
         <label htmlFor="whopay">🤑 Who is paying the bill</label>
         <select name="whopay" id="whopay">
           <option value="user">You</option>
-          <option value="friend">{isFriendSelected[0].name}</option>
+          <option value="friend">{selectedFriend[0].name}</option>
         </select>
         <Button>Split bill</Button>
       </form>
