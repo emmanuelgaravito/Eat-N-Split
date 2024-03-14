@@ -28,10 +28,10 @@ function App() {
 
   function handleNewFriend(newFriend) {
     setFriendsArr([...friendsArr, newFriend]);
+    setIsAddFriendOpen(false);
   }
 
   function handleFriendsBalance(id, amount) {
-    console.log(amount);
     setFriendsArr(
       friendsArr.map((el) =>
         el.id === id ? { ...el, balance: el.balance + amount } : el
@@ -46,12 +46,17 @@ function App() {
           curFriend={curFriend}
           onCurFriend={setCurFriend}
           friendsArr={friendsArr}
+          onIsAddFriendOpen={setIsAddFriendOpen}
         />
         <FormAddFriend
           isOpen={isAddFriendOpen}
           onHandleNewFriend={handleNewFriend}
         />
-        <Button isOpen={isAddFriendOpen} onIsOpen={setIsAddFriendOpen}>
+        <Button
+          isOpen={isAddFriendOpen}
+          onIsOpen={setIsAddFriendOpen}
+          onCurFriend={setCurFriend}
+        >
           {!isAddFriendOpen ? "Add friend" : "Close"}
         </Button>
       </div>
@@ -65,7 +70,12 @@ function App() {
   );
 }
 
-function FriendsList({ curFriend, onCurFriend, friendsArr }) {
+function FriendsList({
+  curFriend,
+  onCurFriend,
+  friendsArr,
+  onIsAddFriendOpen,
+}) {
   const friends = friendsArr;
   return (
     <ul>
@@ -75,13 +85,14 @@ function FriendsList({ curFriend, onCurFriend, friendsArr }) {
           key={el.id}
           curFriend={curFriend}
           onCurFriend={onCurFriend}
+          onIsAddFriendOpen={onIsAddFriendOpen}
         />
       ))}
     </ul>
   );
 }
 
-function Friend({ friend, curFriend, onCurFriend }) {
+function Friend({ friend, curFriend, onCurFriend, onIsAddFriendOpen }) {
   return (
     <li>
       <img src={friend.image} alt={friend.name} />
@@ -97,7 +108,12 @@ function Friend({ friend, curFriend, onCurFriend }) {
           {friend.name} owes you {friend.balance}€
         </p>
       )}
-      <Button curFriend={curFriend} onCurFriend={onCurFriend} friend={friend}>
+      <Button
+        curFriend={curFriend}
+        onCurFriend={onCurFriend}
+        friend={friend}
+        onIsAddFriendOpen={onIsAddFriendOpen}
+      >
         Select
       </Button>
     </li>
@@ -107,16 +123,16 @@ function Friend({ friend, curFriend, onCurFriend }) {
 function FormAddFriend({ isOpen, onHandleNewFriend }) {
   const [name, setName] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+
   function handleOnSubmit(e) {
     e.preventDefault();
-
+    if (!name || !imageUrl) return; // guard clause
     const newFriend = {
-      id: Date.now(),
+      id: crypto.randomUUID(),
       name: name,
       image: imageUrl,
       balance: 0,
     };
-
     onHandleNewFriend(newFriend);
     setName("");
     setImageUrl("");
@@ -149,11 +165,11 @@ function FormAddFriend({ isOpen, onHandleNewFriend }) {
 
 function Button({
   children,
-  isOpen,
   onIsOpen,
   curFriend,
   onCurFriend,
   friend,
+  onIsAddFriendOpen,
 }) {
   function handleIsFriendSelected() {
     onCurFriend(friend.id === curFriend ? null : friend.id);
@@ -162,9 +178,12 @@ function Button({
   return (
     <button
       onClick={() => {
-        if (children === "Select") handleIsFriendSelected();
-        else {
-          onIsOpen(!isOpen);
+        if (children === "Select") {
+          handleIsFriendSelected();
+          onIsAddFriendOpen(false);
+        } else {
+          onIsOpen((show) => !show);
+          onCurFriend(null);
         }
       }}
       className="button"
@@ -177,15 +196,15 @@ function Button({
 function FormSplitBill({ friendsArr, curFriend, onFriendsBalance }) {
   const [billValue, setBillValue] = useState("");
   const [yourExpenses, setYourExpenses] = useState("");
-
   const [whoPay, setWhoPay] = useState("You");
+
+  const friendExpenses = billValue ? billValue - yourExpenses : "";
 
   const selectedFriend = friendsArr.filter((el) => el.id === curFriend);
 
   function handleSplitBill(e) {
+    if (!billValue || !yourExpenses) return;
     e.preventDefault();
-    const friendExpenses = billValue - yourExpenses;
-
     if (whoPay === "You") {
       onFriendsBalance(curFriend, friendExpenses);
     } else {
@@ -214,7 +233,13 @@ function FormSplitBill({ friendsArr, curFriend, onFriendsBalance }) {
           name="yexpenses"
           type="number"
           value={yourExpenses}
-          onChange={(e) => setYourExpenses(Number(e.target.value))}
+          onChange={(e) =>
+            setYourExpenses(
+              Number(e.target.value) > billValue
+                ? yourExpenses
+                : Number(e.target.value)
+            )
+          }
         />
         <label htmlFor="hexpense">
           👫 {selectedFriend[0].name}&#39;s expense
@@ -223,8 +248,8 @@ function FormSplitBill({ friendsArr, curFriend, onFriendsBalance }) {
           id="hexpense"
           name="hexpense"
           type="number"
-          value={billValue - yourExpenses}
-          readOnly
+          value={friendExpenses}
+          disabled
         />
         <label htmlFor="wpay">🤑 Who is paying the bill</label>
         <select
